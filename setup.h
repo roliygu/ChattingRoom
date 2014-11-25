@@ -13,18 +13,19 @@ typedef struct sockaddr sockaddr;
 
 void DieWithUserMessage(const char *msg, const char *detail);
 void DieWithSystemMessage(const char *msg);
-void strAdd(char *String, const char *strfir, const char *strsec);
-void dealwithName(const char *buffer, char *name, char *msg);
-void setUDPServerserverAddr(sockaddr_in *serverAddr);
-void setUDPClientserverAddr(sockaddr_in *serverAddr);
-void sendHello(const char *Username, int sock, const sockaddr *pservaddr, socklen_t servlen);
+void AddString(char *String, const char *strfir, const char *strsec);
+void DealName(const char *buffer, char *name, char *msg);
+void SetUDPServerServerAddr(sockaddr_in *serverAddr);
+void SetUDPClientServerAddr(sockaddr_in *serverAddr);
+void SendHello(const char *username, int sock, const sockaddr *pservaddr, socklen_t servlen);
 typedef struct MyClient{
-	sockaddr cliaddr;
-	char username[128];
-	struct MyClient *next;
+	sockaddr m_cliaddr;
+	char m_username[128];
+	struct MyClient *m_next;
 }MyClient;
-void setMyClient(MyClient *this, const sockaddr *addrptr, const char *name);
-void addMyClient(MyClient *this, MyClient *head);
-MyClient *findMyClient(MyClient *head, const sockaddr *addrptr);
-MyClient *findMyClientbyName(MyClient *head, const char *name);
+void SetMyClient(MyClient *this, const sockaddr *addrptr, const char *name);
+void AddMyClient(MyClient *this, MyClient *head);
+MyClient *FindMyClient(MyClient *head, const sockaddr *addrptr);
+void DeleteMyClient(MyClient *head, const sockaddr *addrptr);
+MyClient *FindMyClientbyName(MyClient *head, const char *name);
 #endif

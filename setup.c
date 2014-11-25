@@ -18,74 +18,73 @@ void DieWithSystemMessage(const char *msg){
 	perror(msg);
 	exit(1);
 }
-void strAdd(char *String, const char *strfir, const char *strsec){
+void AddString(char *String, const char *strfir, const char *strsec){
 	strcat(String, strfir);
 	strcat(String, " ");
 	strcat(String, strsec);
 }
-void setUDPServerserverAddr(sockaddr_in *serverAddr){
+void SetUDPServerServerAddr(sockaddr_in *serverAddr){
 	bzero(serverAddr, sizeof(*serverAddr));
 	serverAddr->sin_family = AF_INET;
 	serverAddr->sin_addr.s_addr = htonl(INADDR_ANY);
 	serverAddr->sin_port = htons(server_port);
 }
-void setUDPClientserverAddr(sockaddr_in *serverAddr){
+void SetUDPClientServerAddr(sockaddr_in *serverAddr){
 	bzero(serverAddr, sizeof(*serverAddr));
 	serverAddr->sin_family = AF_INET;
 	serverAddr->sin_port = htons(server_port);
 	inet_pton(AF_INET, server, &(serverAddr->sin_addr));
 }
-void sendHello(const char *Username, int sock, const sockaddr *pservaddr, socklen_t servlen){
-	int n;
+void SendHello(const char *username, int sock, const sockaddr *pservaddr, socklen_t servlen){	
 	char sendline [MAXSTRINGLENGTH];
-	strcat(sendline, HELLO);
-	strcat(sendline, " ");
-	strcat(sendline, Username);
+	bzero(sendline, MAXSTRINGLENGTH);
+	AddString(sendline, HELLO, username);
+	int n;
 	n = sendto(sock, sendline, strlen(sendline), 0, pservaddr, servlen);
 	if(n<0)
 		DieWithSystemMessage("sendto() failed");
 }
-void setMyClient(MyClient *this, const sockaddr *addrptr, const char *name){
-	memcpy(&(this->cliaddr), addrptr, sizeof(*addrptr));
-	bzero(this->username, 128);
-	strcpy(this->username, name);
-	this->next = NULL;
+void SetMyClient(MyClient *this, const sockaddr *addrptr, const char *username){
+	memcpy(&(this->m_cliaddr), addrptr, sizeof(*addrptr));
+	bzero(this->m_username, 128);
+	strcpy(this->m_username, username);
+	this->m_next = NULL;
 	return;
 }
-void addMyClient(MyClient *this, MyClient *head){
-	this->next = head->next;
-	head->next = this;
+void AddMyClient(MyClient *this, MyClient *head){
+	this->m_next = head->m_next;
+	head->m_next = this;
 	return;
 }
-MyClient *findMyClient(MyClient *head, const sockaddr *addrptr){
-	MyClient *p = head->next;
-	for(;p!=NULL;p=p->next){
-		if(memcmp(addrptr, &(p->cliaddr), sizeof(*addrptr)) == 0)
+MyClient *FindMyClient(MyClient *head, const sockaddr *addrptr){
+	MyClient *p = head->m_next;
+	for(;p!=NULL;p=p->m_next){
+		if(memcmp(addrptr, &(p->m_cliaddr), sizeof(*addrptr)) == 0)
 			return p;
 	}
 	return NULL;
 }
-MyClient *findMyClientbyName(MyClient *head, const char *name){
-	MyClient *p = head->next;
-	for(;p!=NULL;p=p->next){
-		if(strcmp(name, p->username) == 0)
+MyClient *FindMyClientbyName(MyClient *head, const char *name){
+	MyClient *p = head->m_next;
+	for(;p!=NULL;p=p->m_next){
+		if(strcmp(name, p->m_username) == 0)
 			return p;
 	}
 	return NULL;
 }
-void deleteMyClient(MyClient *head, const sockaddr *addrptr){
+void DeleteMyClient(MyClient *head, const sockaddr *addrptr){
 	MyClient *p = head;
-	for(;p->next!=NULL;p=p->next){
-		MyClient *pnext = p->next;
-		if(memcmp(addrptr, &(pnext->cliaddr), sizeof(*addrptr)) == 0){
-			p->next = pnext->next;
+	for(;p->m_next!=NULL;p=p->m_next){
+		MyClient *pnext = p->m_next;
+		if(memcmp(addrptr, &(pnext->m_cliaddr), sizeof(*addrptr)) == 0){
+			p->m_next = pnext->m_next;
 			free(pnext);
 			return;	
 		}
 	}
 	return;
 }
-void dealwithName(const char *buffer, char *name, char *msg){
+void DealName(const char *buffer, char *name, char *msg){
 	size_t bufferlen = strlen(buffer), index=-1,i=0;
 	for(;i<bufferlen;i++)
 		if(buffer[i]==' '){
