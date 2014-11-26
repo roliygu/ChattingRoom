@@ -23,6 +23,12 @@ void AddString(char *String, const char *strfir, const char *strsec){
 	strcat(String, " ");
 	strcat(String, strsec);
 }
+int SetUDPSock(){
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if(sock<0)
+		DieWithSystemMessage("socket() failed");
+	return sock;
+}
 void SetUDPServerServerAddr(sockaddr_in *serverAddr){
 	bzero(serverAddr, sizeof(*serverAddr));
 	serverAddr->sin_family = AF_INET;

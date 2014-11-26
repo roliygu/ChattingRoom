@@ -17,6 +17,7 @@ void AddString(char *String, const char *strfir, const char *strsec);
 void DealName(const char *buffer, char *name, char *msg);
 void SetUDPServerServerAddr(sockaddr_in *serverAddr);
 void SetUDPClientServerAddr(sockaddr_in *serverAddr);
+int SetUDPSock();
 void SendHello(const char *username, int sock, const sockaddr *pservaddr, socklen_t servlen);
 typedef struct MyClient{
 	sockaddr m_cliaddr;

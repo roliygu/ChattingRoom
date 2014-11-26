@@ -7,7 +7,7 @@ extern const char *END;
 
 void Send2Server(FILE *fp, int sock, const sockaddr *pservaddr, socklen_t servlen){	
 	char sendline[MAXSTRINGLENGTH];
-	bzero(sendline, MAXSTRINGLENGTH*sizeof(char));
+	bzero(sendline, MAXSTRINGLENGTH);
 	int n;
 	while(fgets(sendline, MAXSTRINGLENGTH, fp) != NULL){
 		if(strncmp(sendline, END, strlen(END))==0){
@@ -36,13 +36,13 @@ void RecvFromServer(int sock){
 int main(int argc, char *argv[]){
 	if(argc>2 || argc==1)
 		DieWithUserMessage("Parameters", "<Username>");
+	
 	sockaddr_in servaddr;
 	SetUDPClientServerAddr(&servaddr);
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if(sock<0)
-		DieWithSystemMessage("socket() failed");
+	int sock = SetUDPSock();
 	SendHello(argv[1], sock, (sockaddr *) &servaddr, sizeof(servaddr));
 	RecvFromServer(sock);
+
 	pid_t processID;
 	processID = fork();
 	if(processID<0)

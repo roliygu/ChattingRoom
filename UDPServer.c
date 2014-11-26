@@ -8,6 +8,7 @@ extern const char *HELLO;
 extern const char *END;
 
 void Send2All(MyClient *headptr, int sock, const char *msg, sockaddr *cliaddrptr, socklen_t len, int flag){
+	// flag == 0 means send to all including the sender, else except the sender;
 	MyClient *p = headptr->m_next;
 	for(;p!=NULL;p=p->m_next){
 		if( flag  &&  (memcmp(cliaddrptr, &(p->m_cliaddr), sizeof(*cliaddrptr))==0) )
@@ -15,51 +16,53 @@ void Send2All(MyClient *headptr, int sock, const char *msg, sockaddr *cliaddrptr
 		sendto(sock, msg, strlen(msg), 0, &(p->m_cliaddr), len);
 	}
 }
-void RecvFromClient(int sock, sockaddr *pcliaddr, socklen_t clilen){
-	int n;
-	socklen_t len;
-	char msg[MAXSTRINGLENGTH];
-	bzero(msg, MAXSTRINGLENGTH);
+void RecvFromClient(int sock, sockaddr *pcliaddr, socklen_t clilen){	
+	char recvline[MAXSTRINGLENGTH];
+	char sentline[MAXSTRINGLENGTH];
+
 	MyClient headCli, *headCliptr;
 	headCliptr = &headCli;
 	headCli.m_next = NULL;
 	size_t MyCliLen = sizeof(headCli);
+
 	for(;;){
+		socklen_t len;
 		len = clilen;
-		n = recvfrom(sock, msg, MAXSTRINGLENGTH, 0, pcliaddr, &len);
+		bzero(recvline, MAXSTRINGLENGTH);
+		int n = recvfrom(sock, recvline, MAXSTRINGLENGTH, 0, pcliaddr, &len);
 		if(n<0)
 			DieWithSystemMessage("recvfrom() failed");
-		msg[n] = 0;
-		char buffer[MAXSTRINGLENGTH];
-		bzero(buffer, MAXSTRINGLENGTH);
-		if(strncmp(msg, HELLO, strlen(HELLO) )== 0){
+
+		recvline[n] = 0;
+		bzero(sentline, MAXSTRINGLENGTH);
+		if(strncmp(recvline, HELLO, strlen(HELLO) )== 0){
 			MyClient *thisClient = (MyClient *) malloc(MyCliLen);
-			SetMyClient(thisClient, pcliaddr, msg+7);
+			SetMyClient(thisClient, pcliaddr, recvline+7);
 			AddMyClient(thisClient, headCliptr);				
-			AddString(buffer, msg+7, "is comming.\n");	
-			Send2All(headCliptr, sock, buffer, pcliaddr, len, 0);
-		}else if(strncmp(msg, END, strlen(END))== 0){
+			AddString(sentline, recvline+7, "is comming.\n");	
+			Send2All(headCliptr, sock, sentline, pcliaddr, len, 0);
+		}else if(strncmp(recvline, END, strlen(END))== 0){
 			MyClient *sender = FindMyClient(headCliptr, pcliaddr);
-			AddString(buffer, sender->m_username, "is leaving.\n");
+			AddString(sentline, sender->m_username, "is leaving.\n");
 			DeleteMyClient(headCliptr, pcliaddr);
-			Send2All(headCliptr, sock, buffer, pcliaddr, len, 0);
+			Send2All(headCliptr, sock, sentline, pcliaddr, len, 0);
 		}else{
 			MyClient *sender = FindMyClient(headCliptr, pcliaddr);
-			if(msg[0]=='@'){
+			if(recvline[0]=='@'){
 				char tempname[64], tempmsg[MAXSTRINGLENGTH];
 				bzero(tempname, 64);
 				bzero(tempmsg, MAXSTRINGLENGTH);
-				DealName(msg, tempname, tempmsg);
+				DealName(recvline, tempname, tempmsg);
 				MyClient *recver = FindMyClientbyName(headCliptr ,tempname);
 				if(recver!=NULL){
-					AddString(buffer, sender->m_username, "to you: ");
-					strcat(buffer, tempmsg);
-					sendto(sock, buffer, strlen(buffer), 0, &(recver->m_cliaddr), len);
+					AddString(sentline, sender->m_username, "to you: ");
+					strcat(sentline, tempmsg);
+					sendto(sock, sentline, strlen(sentline), 0, &(recver->m_cliaddr), len);
 				}
 			}else{
-				AddString(buffer, sender->m_username, "saying: ");
-				strcat(buffer, msg);
-				Send2All(headCliptr, sock, buffer, pcliaddr, len, 1);
+				AddString(sentline, sender->m_username, "saying: ");
+				strcat(sentline, recvline);
+				Send2All(headCliptr, sock, sentline, pcliaddr, len, 1);
 			}
 		}
 	}
@@ -67,9 +70,7 @@ void RecvFromClient(int sock, sockaddr *pcliaddr, socklen_t clilen){
 int main(int argc, char *argv[]){
 	sockaddr_in servaddr, cliaddr;
 	SetUDPServerServerAddr(&servaddr);
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if(sock<0)
-		DieWithSystemMessage("socket() failed");
+	int sock = SetUDPSock();
 	if(bind(sock, (sockaddr *) &servaddr, sizeof(servaddr))<0)
 		DieWithSystemMessage("bind() failed");
 	RecvFromClient(sock, (sockaddr *) &cliaddr, sizeof(cliaddr));
